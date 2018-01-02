@@ -207,7 +207,7 @@ describe('Users', function () {
         .send(userData)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toInclude(userData);
+          expect(res.body).toInclude({email: userData.email});
         })
         .end((err, res) => {
           if (err) {
