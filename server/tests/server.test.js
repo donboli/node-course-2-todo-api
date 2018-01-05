@@ -6,23 +6,10 @@ const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
 const { User } = require('./../models/user');
 
-const todos = [{
-  _id: new ObjectID(),
-  text: 'First test todo'
-},
-{
-  _id: new ObjectID(),
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 333
-}];
+const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
-beforeEach((done) => {
-  Todo.remove({})
-    .then(() => Todo.insertMany(todos))
-    .then(() => User.remove({}))
-    .then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('Todos', function () {
   describe('POST /todos', () => {
@@ -190,35 +177,6 @@ describe('Todos', function () {
           expect(res.body.todo.completedAt).toNotExist();
         })
         .end(done);
-    });
-  });
-});
-
-describe('Users', function () {
-  describe('POST /users', function () {
-    it('should create a new user', function (done) {
-      const userData = {
-        email: 'asd@asd.com',
-        password: 'abc123'
-      };
-
-      request(app)
-        .post('/users')
-        .send(userData)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toInclude({email: userData.email});
-        })
-        .end((err, res) => {
-          if (err) {
-            return done(err);
-          }
-
-          User.count().then((count) => {
-            expect(count).toBe(1);
-            done();
-          }).catch((e) => done(e));
-        });
     });
   });
 });
