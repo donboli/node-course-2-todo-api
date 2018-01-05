@@ -180,3 +180,86 @@ describe('Todos', function () {
     });
   });
 });
+
+describe('GET /users/me', function () {
+  it('should return user if authenticated', function (done) {
+    const user = users[0];
+
+    request(app)
+      .get('/users/me')
+      .set('x-auth', user.tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.email).toBe(user.email);
+        expect(res.body._id).toBe(user._id.toHexString());
+      })
+      .end(done);
+  });
+
+  it('should return 401 if not authenticated', function (done) {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({});
+      })
+      .end(done);
+  });
+});
+
+describe.only('POST /users', function () {
+  it('should create a user', function (done) {
+    var email = 'example@exmaple.com';
+    var password = 'abc123!';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(200)
+      .expect((res) => {
+        expect(res.header['x-auth']).toExist();
+        expect(res.body._id).toExist();
+        expect(res.body.email).toBe(email);
+      })
+      .end((err) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findOne({email: email}).then((user) => {
+          expect(user).toExist();
+          expect(user.password).toNotBe(password);
+          done();
+        });
+      });
+  });
+
+  it('should return validation errors if request invalid', function (done) {
+    var email = 'example';
+    var password = 'abc';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.errors.email).toExist();
+        expect(res.body.errors.password).toExist();
+      })
+      .end(done);
+  });
+
+  it('should not create user if email in use', function (done) {
+    var email = users[0].email;
+    var password = 'abc123!';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.errmsg).toExist();
+      })
+      .end(done);
+  });
+});
