@@ -307,3 +307,34 @@ describe('POST /users/login', function () {
       .end(done);
   });
 });
+
+describe.only('DELETE /users/me/token', function () {
+  it('should remove the user\'s token', function (done) {
+    const user = users[0];
+
+    request(app)
+      .delete('/users/me/token')
+      .set('x-auth', user.tokens[0].token)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(user._id).then((user) => {
+          expect(user.tokens).toEqual([]);
+          done();
+        }).catch((e) => done(e));
+      });
+  });
+
+  it('should reject wrong tokens', function (done) {
+    const user = users[0];
+
+    request(app)
+      .delete('/users/me/token')
+      .set('x-auth', user.tokens[0].token + '1')
+      .expect(401)
+      .end(done);
+  });
+});
