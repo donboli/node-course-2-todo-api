@@ -230,7 +230,7 @@ describe('POST /users', function () {
           expect(user).toExist();
           expect(user.password).toNotBe(password);
           done();
-        });
+        }).catch((e) => done(e));
       });
   });
 
@@ -264,23 +264,35 @@ describe('POST /users', function () {
   });
 });
 
-describe.only('POST /users/login', function () {
-  it('should return the x-auth header with existing credentials', function (done) {
+describe('POST /users/login', function () {
+  it('should login user and return auth token', function (done) {
     request(app)
       .post('/users/login')
       .send({
-        email: users[0].email,
-        password: users[0].password
+        email: users[1].email,
+        password: users[1].password
       })
       .expect(200)
       .expect((res) => {
-        expect(res.header['x-auth']).toEqual(users[0].tokens[0].token);
-        expect(res.body.email).toBe(users[0].email);
+        expect(res.header['x-auth']).toExist();
+        expect(res.body.email).toBe(users[1].email);
       })
-      .end(done);
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(users[1]._id).then((user) => {
+          expect(user.tokens[0]).toInclude({
+            access: 'auth',
+            token: res.header['x-auth']
+          });
+          done();
+        }).catch((e) => done(e));
+      });
   });
 
-  it('should return 400 with wrong credentials', function (done) {
+  it('should reject invalid login', function (done) {
     request(app)
       .post('/users/login')
       .send({
