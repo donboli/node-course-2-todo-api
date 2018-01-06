@@ -207,7 +207,7 @@ describe('GET /users/me', function () {
   });
 });
 
-describe.only('POST /users', function () {
+describe('POST /users', function () {
   it('should create a user', function (done) {
     var email = 'example@exmaple.com';
     var password = 'abc123!';
@@ -259,6 +259,38 @@ describe.only('POST /users', function () {
       .expect(400)
       .expect((res) => {
         expect(res.body.errmsg).toExist();
+      })
+      .end(done);
+  });
+});
+
+describe.only('POST /users/login', function () {
+  it('should return the x-auth header with existing credentials', function (done) {
+    request(app)
+      .post('/users/login')
+      .send({
+        email: users[0].email,
+        password: users[0].password
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.header['x-auth']).toEqual(users[0].tokens[0].token);
+        expect(res.body.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+
+  it('should return 400 with wrong credentials', function (done) {
+    request(app)
+      .post('/users/login')
+      .send({
+        email: 'asd',
+        password: 'asd'
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.header['x-auth']).toNotExist();
+        expect(res.body).toEqual({});
       })
       .end(done);
   });

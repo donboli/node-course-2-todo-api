@@ -1,16 +1,17 @@
 require('./config/config');
 
-var express = require('express');
-var _ = require('lodash');
-var bodyParser = require('body-parser');
-var {ObjectId} = require('mongodb');
+const express = require('express');
+const _ = require('lodash');
+const bodyParser = require('body-parser');
+const {ObjectId} = require('mongodb');
+const bcrypt = require('bcryptjs');
 
-var {mongoose} = require('./db/mongoose');
-var {Todo} = require('./models/todo');
-var {User} = require('./models/user');
-var {authenticate} = require('./middleware/authenticate');
+const {mongoose} = require('./db/mongoose');
+const {Todo} = require('./models/todo');
+const {User} = require('./models/user');
+const {authenticate} = require('./middleware/authenticate');
 
-var app = express();
+const app = express();
 const port = process.env.PORT;
 
 app.use(bodyParser.json());
@@ -105,6 +106,16 @@ app.post('/users', (req, res) => {
   }).then((token) => {
     res.header('x-auth', token).send(user);
   }).catch((e) => res.status(400).send(e));
+});
+
+app.post('/users/login', (req, res) => {
+  const body = _.pick(req.body, ['email', 'password']);
+
+  User.findByCredentials(body.email, body.password).then((user) => {
+    res.header('x-auth', user.tokens[0].token).send(user);
+  }).catch(() => {
+    res.status(400).send()
+  });
 });
 
 app.get('/users/me', authenticate, (req, res) => {
